@@ -7,6 +7,8 @@ public class Table {
     private final ValueType elementType;
     private final TableLimits limits;
 
+    private final List<Instruction> init;
+
     public Table(ValueType elementType, TableLimits limits) {
         this(
                 elementType,
@@ -20,6 +22,7 @@ public class Table {
             throw new IllegalArgumentException("Table element type must be a reference type");
         }
         this.limits = Objects.requireNonNull(limits, "limits");
+        this.init = init;
     }
 
     public ValueType elementType() {
@@ -28,6 +31,10 @@ public class Table {
 
     public TableLimits limits() {
         return limits;
+    }
+
+    public List<Instruction> initialize() {
+        return init;
     }
 
     @Override
