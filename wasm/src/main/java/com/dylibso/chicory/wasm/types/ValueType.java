@@ -209,6 +209,7 @@ public final class ValueType {
         return this.id == that.id;
     }
 
+    @Override
     public String toString() {
         switch (opcode()) {
             case ID.Ref:
