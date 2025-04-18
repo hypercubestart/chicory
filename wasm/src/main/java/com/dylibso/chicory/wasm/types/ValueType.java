@@ -24,6 +24,7 @@ public final class ValueType {
     public static ValueType V128 = new ValueType(ID.V128);
     public static ValueType FuncRef = new ValueType(ID.FuncRef);
     public static ValueType ExternRef = new ValueType(ID.ExternRef);
+    public static ValueType ExnRef = new ValueType(ID.ExnRef);
 
     private final long id;
 
@@ -290,34 +291,6 @@ public final class ValueType {
         return this.id == that.id;
     }
 
-    public String toString() {
-        switch (opcode()) {
-            case ID.Ref:
-            case ID.RefNull:
-                return ID.toName(opcode()) + "[" + typeIdx() + "]";
-            default:
-                return ID.toName(opcode());
-        }
-    }
-
-    public int typeIdx() {
-        return (int) (id >>> TYPEIDX_SHIFT);
-    }
-
-    @Override
-    public int hashCode() {
-        return Long.hashCode(id);
-    }
-
-    @Override
-    public boolean equals(Object other) {
-        if (!(other instanceof ValueType)) {
-            return false;
-        }
-        ValueType that = (ValueType) other;
-        return this.id == that.id;
-    }
-
     @Override
     public String toString() {
         switch (opcode()) {
@@ -328,17 +301,12 @@ public final class ValueType {
                 return ID.toName(opcode());
         }
     }
-
-    /**
-     * A separate holder class for ID constants.
-     * This is necessary because enum constants are initialized before normal fields, so any reference to an ID constant
-     * in the same class would be considered an invalid forward reference.
-     */
 
     public enum TypeIdxCode {
         // heap type
-        EXTERN(0x6F),
-        FUNC(0x70);
+        EXTERN(-17), // 0x6F
+        FUNC(-16), // 0x70
+        BOT(-1);
 
         private final int code;
 
@@ -351,56 +319,15 @@ public final class ValueType {
         }
     }
 
+    /**
+     * A separate holder class for ID constants.
+     * This is necessary because enum constants are initialized before normal fields, so any reference to an ID constant
+     * in the same class would be considered an invalid forward reference.
+     */
     public static final class ID {
         private ID() {}
 
         public static final int BOT = -1;
-        public static final int RefNull = 0x63;
-        public static final int Ref = 0x64;
-        public static final int ExternRef = 0x6f;
-        public static final int FuncRef = 0x70;
-        public static final int V128 = 0x7b;
-        public static final int F64 = 0x7c;
-        public static final int F32 = 0x7d;
-        public static final int I64 = 0x7e;
-        public static final int I32 = 0x7f;
-
-        public static String toName(int opcode) {
-            switch (opcode) {
-                case BOT:
-                    return "Bot";
-                case RefNull:
-                    return "RefNull";
-                case Ref:
-                    return "Ref";
-                case V128:
-                    return "V128";
-                case F64:
-                    return "F64";
-                case F32:
-                    return "F32";
-                case I64:
-                    return "I64";
-                case I32:
-                    return "I32";
-            }
-
-            throw new IllegalArgumentException("got invalid opcode in ValueType.toName: " + opcode);
-        }
-
-        public static boolean isValidOpcode(int opcode) {
-            return (opcode == RefNull
-                    || opcode == Ref
-                    || opcode == ExternRef
-                    || opcode == FuncRef
-                    || opcode == ExnRef
-                    || opcode == V128
-                    || opcode == F64
-                    || opcode == F32
-                    || opcode == I64
-                    || opcode == I32);
-        }
-        public static final int UNKNOWN = -1;
         public static final int RefNull = 0x63;
         public static final int Ref = 0x64;
         public static final int ExternRef = 0x6f;
@@ -415,8 +342,8 @@ public final class ValueType {
 
         public static String toName(int opcode) {
             switch (opcode) {
-                case UNKNOWN:
-                    return "Unknown";
+                case BOT:
+                    return "Bot";
                 case RefNull:
                     return "RefNull";
                 case Ref:
