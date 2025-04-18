@@ -167,7 +167,7 @@ final class Validator {
         if (valueTypeStack.size() == frame.height) {
             errors.add(
                     new InvalidException(
-                            "type mismatch, popVal(), stack reached limit at " + frame.height));
+                            "type mismatch: instruction requires [i32] but stack has []"));
             return ValueType.BOT;
         }
         return valueTypeStack.remove(valueTypeStack.size() - 1);
@@ -326,7 +326,7 @@ final class Validator {
     }
 
     private List<ValueType> getParams(AnnotatedInstruction op) {
-        var typeId = (int) op.operand(0);
+        var typeId = op.operand(0);
         if (typeId == 0x40) { // epsilon
             return List.of();
         }
@@ -336,7 +336,7 @@ final class Validator {
         if (typeId >= module.typeSection().typeCount()) {
             throw new MalformedException("unexpected end");
         }
-        return getType(typeId).params();
+        return getType((int) typeId).params();
     }
 
     private ValueType getLocalType(int idx) {
@@ -891,7 +891,7 @@ final class Validator {
                     VALIDATE_RETURN();
                     break;
                 case RETURN_CALL_INDIRECT:
-                    VALIDATE_CALL_INDIRECT((int) op.operand(0), (int) op.operand(1), true);
+                    VALIDATE_CALL_INDIRECT(op.operand(0), (int) op.operand(1), true);
                     VALIDATE_RETURN();
                     break;
                 case RETURN_CALL_REF:

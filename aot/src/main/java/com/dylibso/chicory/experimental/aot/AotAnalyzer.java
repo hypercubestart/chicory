@@ -559,7 +559,7 @@ final class AotAnalyzer {
                 break;
             case REF_NULL:
                 // [] -> [ref]
-                stack.push(ValueType.refTypeForId(ins.operand(0)));
+                stack.push(new ValueType(ValueType.ID.RefNull, (int) ins.operand(0)));
                 break;
             case REF_IS_NULL:
                 // [ref] -> [I32]

@@ -37,7 +37,7 @@ public enum OpCode {
     DROP(0x1A),
     SELECT(0x1B),
     SELECT_T(0x1C, List.of(VEC_VALUE_TYPE)),
-    TRY_TABLE(0x1F, List.of(VARUINT, VEC_CATCH)),
+    TRY_TABLE(0x1F, List.of(BLOCK_TYPE, VEC_CATCH)),
     LOCAL_GET(0x20, List.of(VARUINT)),
     LOCAL_SET(0x21, List.of(VARUINT)),
     LOCAL_TEE(0x22, List.of(VARUINT)),

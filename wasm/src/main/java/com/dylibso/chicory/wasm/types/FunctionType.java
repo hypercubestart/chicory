@@ -56,7 +56,9 @@ public final class FunctionType {
             case ValueType.ID.I32:
                 return new FunctionType(List.of(), List.of(valueType));
             case ValueType.ID.RefNull:
-                if (valueType.equals(ValueType.ExternRef) || valueType.equals(ValueType.FuncRef)) {
+                if (valueType.equals(ValueType.ExternRef)
+                        || valueType.equals(ValueType.FuncRef)
+                        || valueType.equals(ValueType.ExnRef)) {
                     return new FunctionType(List.of(), List.of(valueType));
                 }
                 // fallthrough
@@ -75,7 +77,9 @@ public final class FunctionType {
             case ValueType.ID.I32:
                 return new FunctionType(List.of(valueType), List.of());
             case ValueType.ID.RefNull:
-                if (valueType.equals(ValueType.ExternRef) || valueType.equals(ValueType.FuncRef)) {
+                if (valueType.equals(ValueType.ExternRef)
+                        || valueType.equals(ValueType.FuncRef)
+                        || valueType.equals(ValueType.ExnRef)) {
                     return new FunctionType(List.of(valueType), List.of());
                 }
                 // fallthrough

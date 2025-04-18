@@ -224,7 +224,7 @@ public class InterpreterMachine implements Machine {
                     break;
                 case RETURN_CALL_REF:
                     // swap in place the current frame
-                    frame = RETURN_CALL_REF(stack, instance, callStack, operands, frame);
+                    frame = RETURN_CALL_REF(stack, instance, callStack, frame);
                     break;
                 case THROW:
                     {
@@ -2044,7 +2044,6 @@ public class InterpreterMachine implements Machine {
             MStack stack,
             Instance instance,
             Deque<StackFrame> callStack,
-            Operands operands,
             StackFrame currentStackFrame) {
         int funcId = (int) stack.pop();
         if (funcId == REF_NULL_VALUE) {

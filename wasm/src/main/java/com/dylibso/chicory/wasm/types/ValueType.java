@@ -42,6 +42,9 @@ public final class ValueType {
         } else if (opcode == ID.ExternRef) {
             typeIdx = TypeIdxCode.EXTERN.code();
             opcode = ID.RefNull;
+        } else if (opcode == ID.ExnRef) {
+            typeIdx = TypeIdxCode.EXN.code();
+            opcode = ID.RefNull;
         }
 
         long id = ((long) typeIdx) << TYPEIDX_SHIFT | (opcode & OPCODE_MASK);
@@ -129,7 +132,6 @@ public final class ValueType {
     public boolean isReference() {
         switch (this.opcode()) {
             case ID.Ref:
-            case ID.ExnRef:
             case ID.RefNull:
                 return true;
             default:
@@ -145,7 +147,6 @@ public final class ValueType {
         switch (res.opcode()) {
             case ID.RefNull:
             case ID.Ref:
-            case ID.ExnRef:
             case ID.V128:
             case ID.I32:
             case ID.I64:
@@ -174,7 +175,6 @@ public final class ValueType {
         switch (res.opcode()) {
             case ID.RefNull:
             case ID.Ref:
-            case ID.ExnRef:
                 return res;
             default:
                 throw new MalformedException("malformed reference type " + id);
@@ -302,10 +302,18 @@ public final class ValueType {
         }
     }
 
+    /**
+     * a string representation of [ValueType] that follows JVM's naming conventions
+     */
+    public String name() {
+        return ID.toName(opcode());
+    }
+
     public enum TypeIdxCode {
         // heap type
         EXTERN(-17), // 0x6F
         FUNC(-16), // 0x70
+        EXN(-23), // 0x69
         BOT(-1);
 
         private final int code;

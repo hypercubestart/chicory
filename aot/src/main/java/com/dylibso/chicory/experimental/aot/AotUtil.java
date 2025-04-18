@@ -246,7 +246,7 @@ final class AotUtil {
     public static String valueMethodName(List<ValueType> types) {
         return "value_"
                 + types.stream()
-                        .map(type -> type.name().toLowerCase(Locale.ROOT))
+                        .map(type -> type.toString().toLowerCase(Locale.ROOT))
                         .collect(joining("_"));
     }
 
