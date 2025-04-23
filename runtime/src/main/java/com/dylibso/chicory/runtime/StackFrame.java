@@ -1,10 +1,10 @@
 package com.dylibso.chicory.runtime;
 
-import static com.dylibso.chicory.wasm.types.NewValueType.sizeOf;
+import static com.dylibso.chicory.wasm.types.ValType.sizeOf;
 
 import com.dylibso.chicory.wasm.types.AnnotatedInstruction;
-import com.dylibso.chicory.wasm.types.NewValueType;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -27,7 +27,7 @@ public class StackFrame {
     private final int funcId;
     private int pc;
     private final long[] locals;
-    private final NewValueType[] localTypes;
+    private final ValType[] localTypes;
     private final int[] localIdx;
     private final Instance instance;
 
@@ -47,15 +47,15 @@ public class StackFrame {
             Instance instance,
             int funcId,
             long[] args,
-            List<NewValueType> argsTypes,
-            List<NewValueType> localTypes,
+            List<ValType> argsTypes,
+            List<ValType> localTypes,
             List<AnnotatedInstruction> code) {
         this.code = code;
         this.instance = instance;
         this.funcId = funcId;
         this.locals = Arrays.copyOf(args, sizeOf(argsTypes) + sizeOf(localTypes));
         int localsSize = argsTypes.size() + localTypes.size();
-        this.localTypes = new NewValueType[localsSize];
+        this.localTypes = new ValType[localsSize];
         for (int i = 0; i < argsTypes.size(); i++) {
             this.localTypes[i] = argsTypes.get(i);
         }
@@ -67,14 +67,14 @@ public class StackFrame {
         // initialize codesegment locals.
         int j = 0;
         for (var i = 0; i < localTypes.size(); i++) {
-            NewValueType type = localTypes.get(i);
+            ValType type = localTypes.get(i);
             var idx = j + sizeOf(argsTypes);
-            if (!type.equals(NewValueType.V128)) {
+            if (!type.equals(ValType.V128)) {
                 locals[idx] = Value.zero(type);
                 j += 1;
             } else {
-                locals[idx] = Value.zero(NewValueType.I64);
-                locals[idx + 1] = Value.zero(NewValueType.I64);
+                locals[idx] = Value.zero(ValType.I64);
+                locals[idx + 1] = Value.zero(ValType.I64);
                 j += 2;
             }
         }
@@ -83,7 +83,7 @@ public class StackFrame {
         j = 0;
         for (int i = 0; i < this.localTypes.length; i++) {
             this.localIdx[i] = j;
-            if (!localType(i).equals(NewValueType.V128)) {
+            if (!localType(i).equals(ValType.V128)) {
                 j += 1;
             } else {
                 j += 2;
@@ -102,7 +102,7 @@ public class StackFrame {
         return funcId;
     }
 
-    NewValueType localType(int i) {
+    ValType localType(int i) {
         return this.localTypes[i];
     }
 

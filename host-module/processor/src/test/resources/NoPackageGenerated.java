@@ -2,7 +2,7 @@ import com.dylibso.chicory.runtime.HostFunction;
 import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.FunctionType;
-import com.dylibso.chicory.wasm.types.NewValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 
 import java.util.List;
 import javax.annotation.processing.Generated;
@@ -22,8 +22,8 @@ public final class NoPackage_ModuleFactory {
                 new HostFunction(moduleName,
                         "print",
                         FunctionType.of(
-                                List.of(NewValueType.I32,
-                                        NewValueType.I32),
+                                List.of(ValType.I32,
+                                        ValType.I32),
                                 List.of()),
                         (Instance instance, long... args) -> {
                             functions.print(instance.memory(),

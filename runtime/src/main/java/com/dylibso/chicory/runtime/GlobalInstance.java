@@ -1,14 +1,14 @@
 package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.MutabilityType;
-import com.dylibso.chicory.wasm.types.NewValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.dylibso.chicory.wasm.types.ValueType;
 
 public class GlobalInstance {
     private long valueLow;
     private long valueHigh;
-    private final NewValueType newValueType;
+    private final ValType valType;
     private Instance instance;
     private final MutabilityType mutabilityType;
 
@@ -19,7 +19,7 @@ public class GlobalInstance {
     public GlobalInstance(Value value, MutabilityType mutabilityType) {
         this.valueLow = value.raw();
         this.valueHigh = 0;
-        this.newValueType = value.type();
+        this.valType = value.type();
         this.mutabilityType = mutabilityType;
     }
 
@@ -28,18 +28,15 @@ public class GlobalInstance {
             long valueLow, long valueHigh, ValueType valueType, MutabilityType mutabilityType) {
         this.valueLow = valueLow;
         this.valueHigh = valueHigh;
-        this.newValueType = valueType.toNew();
+        this.valType = valueType.toNew();
         this.mutabilityType = mutabilityType;
     }
 
     public GlobalInstance(
-            long valueLow,
-            long valueHigh,
-            NewValueType newValueType,
-            MutabilityType mutabilityType) {
+            long valueLow, long valueHigh, ValType valType, MutabilityType mutabilityType) {
         this.valueLow = valueLow;
         this.valueHigh = valueHigh;
-        this.newValueType = newValueType;
+        this.valType = valType;
         this.mutabilityType = mutabilityType;
     }
 
@@ -55,13 +52,13 @@ public class GlobalInstance {
         return valueLow;
     }
 
-    public NewValueType getType() {
-        return newValueType;
+    public ValType getType() {
+        return valType;
     }
 
     public void setValue(Value value) {
         // globals can not be type polimorphic
-        assert (value.type() == newValueType);
+        assert (value.type() == valType);
         this.valueLow = value.raw();
     }
 

@@ -1,7 +1,5 @@
 package com.dylibso.chicory.wasm.types;
 
-import static com.dylibso.chicory.wasm.types.ValueType.ID.ExnRef;
-
 import com.dylibso.chicory.wasm.MalformedException;
 import java.util.List;
 
@@ -155,24 +153,24 @@ public enum ValueType {
         }
     }
 
-    public NewValueType toNew() {
+    public ValType toNew() {
         switch (id) {
             case ID.F64:
-                return NewValueType.F64;
+                return ValType.F64;
             case ID.F32:
-                return NewValueType.F32;
+                return ValType.F32;
             case ID.I64:
-                return NewValueType.I64;
+                return ValType.I64;
             case ID.I32:
-                return NewValueType.I32;
+                return ValType.I32;
             case ID.V128:
-                return NewValueType.V128;
+                return ValType.V128;
             case ID.FuncRef:
-                return NewValueType.FuncRef;
+                return ValType.FuncRef;
             case ID.ExnRef:
-                return NewValueType.ExnRef;
+                return ValType.ExnRef;
             case ID.ExternRef:
-                return NewValueType.ExternRef;
+                return ValType.ExternRef;
             default:
                 throw new IllegalArgumentException("Invalid value type " + id);
         }

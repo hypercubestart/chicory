@@ -4,8 +4,8 @@ import static com.dylibso.chicory.wasm.types.Instruction.EMPTY_OPERANDS;
 
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.Instruction;
-import com.dylibso.chicory.wasm.types.NewValueType;
 import com.dylibso.chicory.wasm.types.OpCode;
+import com.dylibso.chicory.wasm.types.ValType;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
@@ -16,23 +16,23 @@ final class TypeStack {
     public static final Instruction FUNCTION_SCOPE =
             new Instruction(-1, OpCode.NOP, EMPTY_OPERANDS);
 
-    private final Deque<Deque<NewValueType>> types = new ArrayDeque<>();
-    private final Deque<Deque<NewValueType>> restore = new ArrayDeque<>();
+    private final Deque<Deque<ValType>> types = new ArrayDeque<>();
+    private final Deque<Deque<ValType>> restore = new ArrayDeque<>();
     private final Map<Instruction, Integer> scopes = new HashMap<>();
 
     public TypeStack() {
         this.types.push(new ArrayDeque<>());
     }
 
-    public NewValueType peek() {
+    public ValType peek() {
         return types().getFirst();
     }
 
-    public void push(NewValueType type) {
+    public void push(ValType type) {
         types().push(type);
     }
 
-    public void pop(NewValueType expected) {
+    public void pop(ValType expected) {
         var actual = types().pop();
         if (!expected.equals(actual)) {
             throw new IllegalArgumentException("Expected type " + expected + " <> " + actual);
@@ -41,7 +41,7 @@ final class TypeStack {
 
     public void popRef() {
         var actual = types().pop();
-        if (!actual.equals(NewValueType.FuncRef) && !actual.equals(NewValueType.ExternRef)) {
+        if (!actual.equals(ValType.FuncRef) && !actual.equals(ValType.ExternRef)) {
             throw new IllegalArgumentException("Expected reference type <> " + actual);
         }
     }
@@ -58,11 +58,11 @@ final class TypeStack {
         scopes.put(scope, types().size());
 
         // restored stack when exiting "polymorphic" blocks after unconditional control transfer
-        Deque<NewValueType> stack = new ArrayDeque<>(types());
+        Deque<ValType> stack = new ArrayDeque<>(types());
         for (int i = 0; i < scopeType.params().size(); i++) {
             stack.pop();
         }
-        for (NewValueType type : scopeType.returns()) {
+        for (ValType type : scopeType.returns()) {
             stack.push(type);
         }
         restore.push(stack);
@@ -82,7 +82,7 @@ final class TypeStack {
         return scopes.get(scope);
     }
 
-    public Deque<NewValueType> types() {
+    public Deque<ValType> types() {
         return types.getFirst();
     }
 

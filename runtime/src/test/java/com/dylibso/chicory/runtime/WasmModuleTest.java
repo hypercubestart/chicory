@@ -14,10 +14,10 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.CatchOpCode;
 import com.dylibso.chicory.wasm.types.FunctionType;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
-import com.dylibso.chicory.wasm.types.NewValueType;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableLimits;
 import com.dylibso.chicory.wasm.types.TagType;
+import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -94,7 +94,7 @@ public class WasmModuleTest {
                 new HostFunction(
                         "console",
                         "log",
-                        FunctionType.of(List.of(NewValueType.I32, NewValueType.I32), List.of()),
+                        FunctionType.of(List.of(ValType.I32, ValType.I32), List.of()),
                         (Instance instance, long... args) -> { // decompiled is: console_log(13, 0);
                             Memory memory = instance.memory();
                             int len = (int) args[0];
@@ -147,7 +147,7 @@ public class WasmModuleTest {
                 new HostFunction(
                         "env",
                         "gotit",
-                        FunctionType.of(List.of(NewValueType.I32), List.of()),
+                        FunctionType.of(List.of(ValType.I32), List.of()),
                         (Instance instance, long... args) -> {
                             var val = args[0];
 
@@ -296,7 +296,7 @@ public class WasmModuleTest {
                 new HostFunction(
                         "env",
                         "cbrt",
-                        FunctionType.of(List.of(NewValueType.I32), List.of(NewValueType.F64)),
+                        FunctionType.of(List.of(ValType.I32), List.of(ValType.F64)),
                         (Instance instance, long... args) -> {
                             var x = args[0];
                             var cbrt = Math.cbrt((double) x);
@@ -307,7 +307,7 @@ public class WasmModuleTest {
                 new HostFunction(
                         "env",
                         "log",
-                        FunctionType.of(List.of(NewValueType.I32, NewValueType.F64), List.of()),
+                        FunctionType.of(List.of(ValType.I32, ValType.F64), List.of()),
                         (Instance instance, long... args) -> {
                             var logLevel = args[0];
                             var value = (int) Double.longBitsToDouble(args[1]);
@@ -420,7 +420,7 @@ public class WasmModuleTest {
                 new HostFunction(
                         "env",
                         "log",
-                        FunctionType.of(List.of(NewValueType.I32), List.of()),
+                        FunctionType.of(List.of(ValType.I32), List.of()),
                         (inst, args) -> {
                             logged1.set(true);
                             return null;
@@ -429,7 +429,7 @@ public class WasmModuleTest {
                 new HostFunction(
                         "env",
                         "log",
-                        FunctionType.of(List.of(NewValueType.I64), List.of()),
+                        FunctionType.of(List.of(ValType.I64), List.of()),
                         (inst, args) -> {
                             logged2.set(true);
                             return null;
@@ -457,7 +457,7 @@ public class WasmModuleTest {
                 new HostFunction(
                         "env",
                         "log",
-                        FunctionType.of(List.of(NewValueType.I32), List.of()),
+                        FunctionType.of(List.of(ValType.I32), List.of()),
                         (inst, args) -> {
                             loggedI32.set(true);
                             return null;
@@ -466,7 +466,7 @@ public class WasmModuleTest {
                 new HostFunction(
                         "env",
                         "log",
-                        FunctionType.of(List.of(NewValueType.I64), List.of()),
+                        FunctionType.of(List.of(ValType.I64), List.of()),
                         (inst, args) -> {
                             loggedI64.set(true);
                             return null;
@@ -496,12 +496,12 @@ public class WasmModuleTest {
                 new ImportTable(
                         "env",
                         "table",
-                        new TableInstance(new Table(NewValueType.FuncRef, new TableLimits(1))));
+                        new TableInstance(new Table(ValType.FuncRef, new TableLimits(1))));
         var tableExternref =
                 new ImportTable(
                         "env",
                         "table",
-                        new TableInstance(new Table(NewValueType.ExternRef, new TableLimits(2))));
+                        new TableInstance(new Table(ValType.ExternRef, new TableLimits(2))));
         var tagI32 =
                 new ImportTag(
                         "env",
@@ -530,8 +530,8 @@ public class WasmModuleTest {
 
         assertEquals(123L, instance.imports().global(0).instance().getValue());
         assertEquals(124L, instance.imports().global(1).instance().getValue());
-        assertEquals(NewValueType.FuncRef, instance.imports().table(0).table().elementType());
-        assertEquals(NewValueType.ExternRef, instance.imports().table(1).table().elementType());
+        assertEquals(ValType.FuncRef, instance.imports().table(0).table().elementType());
+        assertEquals(ValType.ExternRef, instance.imports().table(1).table().elementType());
         assertEquals(0, instance.imports().tag(0).tag().tagType().typeIdx());
         assertEquals(1, instance.imports().tag(1).tag().tagType().typeIdx());
     }

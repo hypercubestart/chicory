@@ -1,7 +1,7 @@
 package com.dylibso.chicory.runtime;
 
 import com.dylibso.chicory.wasm.types.FunctionType;
-import com.dylibso.chicory.wasm.types.NewValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,21 +9,21 @@ import java.util.List;
 public class ImportFunction implements ImportValue {
     private final String module;
     private final String name;
-    private final List<NewValueType> paramTypes;
-    private final List<NewValueType> returnTypes;
+    private final List<ValType> paramTypes;
+    private final List<ValType> returnTypes;
     private final WasmFunctionHandle handle;
 
     @Deprecated(since = "23/05/2025")
-    protected static List<NewValueType> convert(List objs) {
-        var result = new ArrayList<NewValueType>(objs.size());
+    protected static List<ValType> convert(List objs) {
+        var result = new ArrayList<ValType>(objs.size());
         for (var v : objs) {
-            if (v instanceof NewValueType) {
-                result.add((NewValueType) v);
+            if (v instanceof ValType) {
+                result.add((ValType) v);
             } else if (v instanceof ValueType) {
                 result.add(((ValueType) v).toNew());
             } else {
                 throw new IllegalArgumentException(
-                        "Expected ValueType or NewValueType, but got: "
+                        "Expected ValueType or ValType, but got: "
                                 + v.getClass().getCanonicalName());
             }
         }
@@ -72,11 +72,11 @@ public class ImportFunction implements ImportValue {
         return Type.FUNCTION;
     }
 
-    public List<NewValueType> paramTypes() {
+    public List<ValType> paramTypes() {
         return paramTypes;
     }
 
-    public List<NewValueType> returnTypes() {
+    public List<ValType> returnTypes() {
         return returnTypes;
     }
 }

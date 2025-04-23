@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.Objects;
 
 public class Table {
-    private final NewValueType elementType;
+    private final ValType elementType;
     private final TableLimits limits;
 
-    public Table(NewValueType elementType, TableLimits limits) {
+    public Table(ValType elementType, TableLimits limits) {
         this(
                 elementType,
                 limits,
@@ -24,7 +24,7 @@ public class Table {
                                 -1, OpCode.REF_NULL, new long[] {elementType.toNew().typeIdx()})));
     }
 
-    public Table(NewValueType elementType, TableLimits limits, List<Instruction> init) {
+    public Table(ValType elementType, TableLimits limits, List<Instruction> init) {
         this.elementType = Objects.requireNonNull(elementType, "elementType");
         if (!elementType.isReference()) {
             throw new IllegalArgumentException("Table element type must be a reference type");
@@ -41,7 +41,7 @@ public class Table {
         this.limits = Objects.requireNonNull(limits, "limits");
     }
 
-    public NewValueType elementType() {
+    public ValType elementType() {
         return elementType;
     }
 

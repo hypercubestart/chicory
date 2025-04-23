@@ -7,20 +7,19 @@ import java.util.Objects;
  * The definition of a global variable in the model of a module.
  */
 public final class Global {
-    private final NewValueType newValueType;
+    private final ValType valType;
     private final MutabilityType mutabilityType;
     private final List<Instruction> init;
 
-    public Global(
-            NewValueType newValueType, MutabilityType mutabilityType, List<Instruction> init) {
-        this.newValueType = newValueType;
+    public Global(ValType valType, MutabilityType mutabilityType, List<Instruction> init) {
+        this.valType = valType;
         this.mutabilityType = mutabilityType;
         this.init = List.copyOf(init);
     }
 
     @Deprecated(since = "23/05/2025", forRemoval = true)
     public Global(ValueType valueType, MutabilityType mutabilityType, List<Instruction> init) {
-        this.newValueType = valueType.toNew();
+        this.valType = valueType.toNew();
         this.mutabilityType = mutabilityType;
         this.init = List.copyOf(init);
     }
@@ -29,8 +28,8 @@ public final class Global {
         return mutabilityType;
     }
 
-    public NewValueType valueType() {
-        return newValueType;
+    public ValType valueType() {
+        return valType;
     }
 
     public List<Instruction> initInstructions() {
@@ -46,13 +45,13 @@ public final class Global {
             return false;
         }
         Global global = (Global) o;
-        return newValueType.equals(global.newValueType)
+        return valType.equals(global.valType)
                 && mutabilityType == global.mutabilityType
                 && Objects.equals(init, global.init);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(newValueType, mutabilityType, init);
+        return Objects.hash(valType, mutabilityType, init);
     }
 }

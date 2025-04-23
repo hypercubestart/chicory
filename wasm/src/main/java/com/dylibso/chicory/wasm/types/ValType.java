@@ -6,31 +6,31 @@ import java.util.List;
 /**
  * The possible WASM value types.
  */
-public final class NewValueType {
+public final class ValType {
     private static final int NULL_TYPEIDX = 0;
     private static final long OPCODE_MASK = 0xFFFFFFFFL;
     private static final long TYPEIDX_SHIFT = 32;
 
-    public static NewValueType UNKNOWN = new NewValueType(ID.UNKNOWN);
-    public static NewValueType F64 = new NewValueType(ID.F64);
+    public static ValType UNKNOWN = new ValType(ID.UNKNOWN);
+    public static ValType F64 = new ValType(ID.F64);
 
-    public static NewValueType F32 = new NewValueType(ID.F32);
-    public static NewValueType I64 = new NewValueType(ID.I64);
+    public static ValType F32 = new ValType(ID.F32);
+    public static ValType I64 = new ValType(ID.I64);
 
-    public static NewValueType I32 = new NewValueType(ID.I32);
+    public static ValType I32 = new ValType(ID.I32);
 
-    public static NewValueType V128 = new NewValueType(ID.V128);
-    public static NewValueType FuncRef = new NewValueType(ID.FuncRef);
-    public static NewValueType ExnRef = new NewValueType(ID.ExnRef);
-    public static NewValueType ExternRef = new NewValueType(ID.ExternRef);
+    public static ValType V128 = new ValType(ID.V128);
+    public static ValType FuncRef = new ValType(ID.FuncRef);
+    public static ValType ExnRef = new ValType(ID.ExnRef);
+    public static ValType ExternRef = new ValType(ID.ExternRef);
 
     private final long id;
 
-    public NewValueType(int opcode) {
+    public ValType(int opcode) {
         this(opcode, NULL_TYPEIDX);
     }
 
-    public NewValueType(int opcode, int typeIdx) {
+    public ValType(int opcode, int typeIdx) {
         // Conveniently, all value types we want to represent can fit inside a Java long.
         // We store the typeIdx (of reference types) in the upper 4 bytes and the opcode in the
         // lower 4 bytes.
@@ -46,12 +46,12 @@ public final class NewValueType {
         this.id = id;
     }
 
-    private NewValueType(long id) {
+    private ValType(long id) {
         this.id = id;
     }
 
     /**
-     * @return id of this NewValueType
+     * @return id of this ValType
      */
     public long id() {
         return this.id;
@@ -139,7 +139,7 @@ public final class NewValueType {
      * @return {@code true} if the given type ID is a valid value type ID, or {@code false} if it is not
      */
     public static boolean isValid(long typeId) {
-        NewValueType res = forId(typeId);
+        ValType res = forId(typeId);
         switch (res.opcode()) {
             case ID.RefNull:
             case ID.Ref:
@@ -156,19 +156,19 @@ public final class NewValueType {
     }
 
     /**
-     * @return the {@code NewValueType} for the given ID value
+     * @return the {@code ValType} for the given ID value
      * @throws IllegalArgumentException if the ID value does not correspond to a valid value type
      */
-    public static NewValueType forId(long id) {
-        return new NewValueType(id);
+    public static ValType forId(long id) {
+        return new ValType(id);
     }
 
     /**
-     * @return the reference-typed {@code NewValueType} for the given ID value
+     * @return the reference-typed {@code ValType} for the given ID value
      * @throws IllegalArgumentException if the ID value does not correspond to a valid reference type
      */
-    public static NewValueType refTypeForId(long id) {
-        NewValueType res = forId(id);
+    public static ValType refTypeForId(long id) {
+        ValType res = forId(id);
         switch (res.opcode()) {
             case ID.RefNull:
             case ID.Ref:
@@ -179,7 +179,7 @@ public final class NewValueType {
         }
     }
 
-    public static int sizeOf(List<NewValueType> args) {
+    public static int sizeOf(List<ValType> args) {
         int total = 0;
         for (var a : args) {
             if (a.opcode() == ID.V128) {
@@ -202,10 +202,10 @@ public final class NewValueType {
 
     @Override
     public boolean equals(Object other) {
-        if (!(other instanceof NewValueType)) {
+        if (!(other instanceof ValType)) {
             return false;
         }
-        NewValueType that = (NewValueType) other;
+        ValType that = (ValType) other;
         return this.id == that.id;
     }
 
@@ -221,7 +221,7 @@ public final class NewValueType {
     }
 
     /**
-     * a string representation of [NewValueType] that follows JVM's naming conventions
+     * a string representation of [ValType] that follows JVM's naming conventions
      */
     public String name() {
         return ID.toName(opcode());
@@ -281,8 +281,7 @@ public final class NewValueType {
                     return "I32";
             }
 
-            throw new IllegalArgumentException(
-                    "got invalid opcode in NewValueType.toName: " + opcode);
+            throw new IllegalArgumentException("got invalid opcode in ValType.toName: " + opcode);
         }
 
         public static boolean isValidOpcode(int opcode) {

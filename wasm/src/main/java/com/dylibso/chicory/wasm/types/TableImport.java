@@ -6,7 +6,7 @@ import java.util.Objects;
  * An imported table.
  */
 public final class TableImport extends Import {
-    private final NewValueType entryType;
+    private final ValType entryType;
     private final TableLimits limits;
 
     /**
@@ -17,7 +17,7 @@ public final class TableImport extends Import {
      * @param entryType the table entry type (must not be {@code null})
      * @param limits the table limits (must not be {@code null})
      */
-    public TableImport(String moduleName, String name, NewValueType entryType, TableLimits limits) {
+    public TableImport(String moduleName, String name, ValType entryType, TableLimits limits) {
         super(moduleName, name);
         this.entryType = Objects.requireNonNull(entryType, "entryType");
         this.limits = Objects.requireNonNull(limits, "limits");
@@ -33,7 +33,7 @@ public final class TableImport extends Import {
     /**
      * @return the table entry type
      */
-    public NewValueType entryType() {
+    public ValType entryType() {
         return entryType;
     }
 

@@ -7,7 +7,7 @@ import java.util.Objects;
  */
 public final class GlobalImport extends Import {
     private final MutabilityType mutabilityType;
-    private final NewValueType type;
+    private final ValType type;
 
     /**
      * Construct a new instance.
@@ -18,7 +18,7 @@ public final class GlobalImport extends Import {
      * @param type the type of the value stored in the global (must not be {@code null})
      */
     public GlobalImport(
-            String moduleName, String name, MutabilityType mutabilityType, NewValueType type) {
+            String moduleName, String name, MutabilityType mutabilityType, ValType type) {
         super(moduleName, name);
         this.mutabilityType = Objects.requireNonNull(mutabilityType, "mutabilityType");
         this.type = Objects.requireNonNull(type, "type");
@@ -42,7 +42,7 @@ public final class GlobalImport extends Import {
     /**
      * @return the type of the value stored in the global
      */
-    public NewValueType type() {
+    public ValType type() {
         return type;
     }
 

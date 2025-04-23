@@ -5,7 +5,7 @@ import static com.dylibso.chicory.experimental.aot.AotUtil.slotCount;
 
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
-import com.dylibso.chicory.wasm.types.NewValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,7 +15,7 @@ import java.util.List;
 final class AotContext {
 
     private final String internalClassName;
-    private final List<NewValueType> globalTypes;
+    private final List<ValType> globalTypes;
     private final List<FunctionType> functionTypes;
     private final FunctionType[] types;
     private final int funcId;
@@ -28,7 +28,7 @@ final class AotContext {
 
     public AotContext(
             String internalClassName,
-            List<NewValueType> globalTypes,
+            List<ValType> globalTypes,
             List<FunctionType> functionTypes,
             FunctionType[] types,
             int funcId,
@@ -50,7 +50,7 @@ final class AotContext {
         if (hasTooManyParameters(type)) {
             slot += 1; // long[]
         } else {
-            for (NewValueType param : type.params()) {
+            for (ValType param : type.params()) {
                 slots.add(slot);
                 slot += slotCount(param);
             }
@@ -64,14 +64,14 @@ final class AotContext {
 
         // the long[] gets unboxed
         if (hasTooManyParameters(type)) {
-            for (NewValueType param : type.params()) {
+            for (ValType param : type.params()) {
                 slots.add(slot);
                 slot += slotCount(param);
             }
         }
 
         // WASM locals
-        for (NewValueType local : body.localTypes()) {
+        for (ValType local : body.localTypes()) {
             slots.add(slot);
             slot += slotCount(local);
         }
@@ -84,7 +84,7 @@ final class AotContext {
         return internalClassName;
     }
 
-    public List<NewValueType> globalTypes() {
+    public List<ValType> globalTypes() {
         return globalTypes;
     }
 

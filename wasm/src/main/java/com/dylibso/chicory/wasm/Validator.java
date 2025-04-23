@@ -19,12 +19,12 @@ import com.dylibso.chicory.wasm.types.Global;
 import com.dylibso.chicory.wasm.types.GlobalImport;
 import com.dylibso.chicory.wasm.types.Instruction;
 import com.dylibso.chicory.wasm.types.MutabilityType;
-import com.dylibso.chicory.wasm.types.NewValueType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.TableImport;
 import com.dylibso.chicory.wasm.types.TagImport;
 import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TagType;
+import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,12 +40,12 @@ import java.util.stream.Stream;
 // https://webassembly.github.io/spec/core/appendix/algorithm.html
 final class Validator {
 
-    private static boolean isNum(NewValueType t) {
-        return t.isNumeric() || t.equals(NewValueType.UNKNOWN);
+    private static boolean isNum(ValType t) {
+        return t.isNumeric() || t.equals(ValType.UNKNOWN);
     }
 
-    private static boolean isRef(NewValueType t) {
-        return t.isReference() || t.equals(NewValueType.UNKNOWN);
+    private static boolean isRef(ValType t) {
+        return t.isReference() || t.equals(ValType.UNKNOWN);
     }
 
     @SuppressWarnings("PublicField")
@@ -53,9 +53,9 @@ final class Validator {
         // OpCode of the current Control Flow instruction
         public final OpCode opCode;
         // params or inputs
-        public final List<NewValueType> startTypes;
+        public final List<ValType> startTypes;
         // returns or outputs
-        public final List<NewValueType> endTypes;
+        public final List<ValType> endTypes;
         // the height of the stack before entering the current Control Flow instruction
         public final int height;
         // set after unconditional jumps
@@ -65,8 +65,8 @@ final class Validator {
 
         public CtrlFrame(
                 OpCode opCode,
-                List<NewValueType> startTypes,
-                List<NewValueType> endTypes,
+                List<ValType> startTypes,
+                List<ValType> endTypes,
                 int height,
                 boolean unreachable,
                 boolean hasElse) {
@@ -79,7 +79,7 @@ final class Validator {
         }
     }
 
-    private final List<NewValueType> newValueTypeStack = new ArrayList<>();
+    private final List<ValType> valTypeStack = new ArrayList<>();
     private final List<CtrlFrame> ctrlFrameStack = new ArrayList<>();
 
     private final List<InvalidException> errors = new ArrayList<>();
@@ -87,7 +87,7 @@ final class Validator {
     private final WasmModule module;
     private final List<Global> globalImports;
     private final List<Integer> functionImports;
-    private final List<NewValueType> tableImports;
+    private final List<ValType> tableImports;
     private final List<TagType> tagImports;
     private final int memoryImports;
     private final Set<Integer> declaredFunctions;
@@ -144,29 +144,29 @@ final class Validator {
         return Stream.empty();
     }
 
-    private void pushVal(NewValueType valType) {
-        newValueTypeStack.add(valType);
+    private void pushVal(ValType valType) {
+        valTypeStack.add(valType);
     }
 
-    private NewValueType popVal() {
+    private ValType popVal() {
         var frame = peekCtrl();
-        if (newValueTypeStack.size() == frame.height && frame.unreachable) {
-            return NewValueType.UNKNOWN;
+        if (valTypeStack.size() == frame.height && frame.unreachable) {
+            return ValType.UNKNOWN;
         }
-        if (newValueTypeStack.size() == frame.height) {
+        if (valTypeStack.size() == frame.height) {
             errors.add(
                     new InvalidException(
                             "type mismatch: instruction requires [i32] but stack has []"));
-            return NewValueType.UNKNOWN;
+            return ValType.UNKNOWN;
         }
-        return newValueTypeStack.remove(newValueTypeStack.size() - 1);
+        return valTypeStack.remove(valTypeStack.size() - 1);
     }
 
-    private NewValueType popVal(NewValueType expected) {
+    private ValType popVal(ValType expected) {
         var actual = popVal();
         if (!actual.equals(expected)
-                && !actual.equals(NewValueType.UNKNOWN)
-                && !expected.equals(NewValueType.UNKNOWN)) {
+                && !actual.equals(ValType.UNKNOWN)
+                && !expected.equals(ValType.UNKNOWN)) {
             errors.add(
                     new InvalidException(
                             "type mismatch: instruction requires ["
@@ -178,22 +178,22 @@ final class Validator {
         return actual;
     }
 
-    private void pushVals(List<NewValueType> valTypes) {
+    private void pushVals(List<ValType> valTypes) {
         for (var t : valTypes) {
             pushVal(t);
         }
     }
 
-    private List<NewValueType> popVals(List<NewValueType> valTypes) {
-        var popped = new NewValueType[valTypes.size()];
+    private List<ValType> popVals(List<ValType> valTypes) {
+        var popped = new ValType[valTypes.size()];
         for (int i = 0; i < valTypes.size(); i++) {
             popped[i] = popVal(valTypes.get(valTypes.size() - 1 - i));
         }
         return Arrays.asList(popped);
     }
 
-    private void pushCtrl(OpCode opCode, List<NewValueType> in, List<NewValueType> out) {
-        var frame = new CtrlFrame(opCode, in, out, newValueTypeStack.size(), false, false);
+    private void pushCtrl(OpCode opCode, List<ValType> in, List<ValType> out) {
+        var frame = new CtrlFrame(opCode, in, out, valTypeStack.size(), false, false);
         pushCtrl(frame);
         pushVals(in);
     }
@@ -208,7 +208,7 @@ final class Validator {
         }
         var frame = peekCtrl();
         popVals(frame.endTypes);
-        if (newValueTypeStack.size() != frame.height) {
+        if (valTypeStack.size() != frame.height) {
             errors.add(new InvalidException("type mismatch, mismatching stack height"));
         }
         ctrlFrameStack.remove(ctrlFrameStack.size() - 1);
@@ -223,14 +223,14 @@ final class Validator {
         return ctrlFrameStack.get(ctrlFrameStack.size() - 1 - n);
     }
 
-    private static List<NewValueType> labelTypes(CtrlFrame frame) {
+    private static List<ValType> labelTypes(CtrlFrame frame) {
         return (frame.opCode == OpCode.LOOP) ? frame.startTypes : frame.endTypes;
     }
 
     private void resetAtStackLimit() {
         var frame = peekCtrl();
-        while (newValueTypeStack.size() > frame.height) {
-            newValueTypeStack.remove(newValueTypeStack.size() - 1);
+        while (valTypeStack.size() > frame.height) {
+            valTypeStack.remove(valTypeStack.size() - 1);
         }
     }
 
@@ -258,23 +258,23 @@ final class Validator {
         }
     }
 
-    private List<NewValueType> getReturns(AnnotatedInstruction op) {
+    private List<ValType> getReturns(AnnotatedInstruction op) {
         var typeId = op.operand(0);
         if (typeId == 0x40) { // epsilon
             return List.of();
         }
-        if (NewValueType.isValid(typeId)) {
-            return List.of(NewValueType.forId(typeId));
+        if (ValType.isValid(typeId)) {
+            return List.of(ValType.forId(typeId));
         }
         return getType((int) typeId).returns();
     }
 
-    private List<NewValueType> getParams(AnnotatedInstruction op) {
+    private List<ValType> getParams(AnnotatedInstruction op) {
         var typeId = (int) op.operand(0);
         if (typeId == 0x40) { // epsilon
             return List.of();
         }
-        if (NewValueType.isValid(typeId)) {
+        if (ValType.isValid(typeId)) {
             return List.of();
         }
         if (typeId >= module.typeSection().typeCount()) {
@@ -283,7 +283,7 @@ final class Validator {
         return getType(typeId).params();
     }
 
-    private static NewValueType getLocalType(List<NewValueType> localTypes, int idx) {
+    private static ValType getLocalType(List<ValType> localTypes, int idx) {
         if (idx >= localTypes.size()) {
             throw new InvalidException("unknown local " + idx);
         }
@@ -317,7 +317,7 @@ final class Validator {
         return module.functionSection().getFunctionType(idx - functionImports.size());
     }
 
-    private NewValueType getTableType(int idx) {
+    private ValType getTableType(int idx) {
         if (idx < 0 || idx >= tableImports.size() + module.tableSection().tableCount()) {
             throw new InvalidException("unknown table " + idx);
         }
@@ -376,7 +376,7 @@ final class Validator {
                 if (ads.index() != 0) {
                     throw new InvalidException("unknown memory " + ads.index());
                 }
-                validateConstantExpression(ads.offsetInstructions(), NewValueType.I32);
+                validateConstantExpression(ads.offsetInstructions(), ValType.I32);
             }
         }
     }
@@ -400,7 +400,7 @@ final class Validator {
         for (Element el : module.elementSection().elements()) {
             if (el instanceof ActiveElement) {
                 var ae = (ActiveElement) el;
-                validateConstantExpression(ae.offset(), NewValueType.I32);
+                validateConstantExpression(ae.offset(), ValType.I32);
                 for (int i = 0; i < ae.initializers().size(); i++) {
                     var initializers = ae.initializers().get(i);
                     if (initializers.stream().filter(x -> x.opcode() != OpCode.END).count() != 1) {
@@ -439,41 +439,41 @@ final class Validator {
     }
 
     private void validateConstantExpression(
-            List<? extends Instruction> expr, NewValueType expectedType) {
+            List<? extends Instruction> expr, ValType expectedType) {
         int allFuncCount = this.functionImports.size() + module.functionSection().functionCount();
         int constInstrCount = 0;
         for (var instruction : expr) {
-            NewValueType exprType = null;
+            ValType exprType = null;
 
             switch (instruction.opcode()) {
                 case I32_CONST:
-                    exprType = NewValueType.I32;
+                    exprType = ValType.I32;
                     constInstrCount++;
                     break;
                 case I64_CONST:
-                    exprType = NewValueType.I64;
+                    exprType = ValType.I64;
                     constInstrCount++;
                     break;
                 case F32_CONST:
-                    exprType = NewValueType.F32;
+                    exprType = ValType.F32;
                     constInstrCount++;
                     break;
                 case F64_CONST:
-                    exprType = NewValueType.F64;
+                    exprType = ValType.F64;
                     constInstrCount++;
                     break;
                 case V128_CONST:
-                    exprType = NewValueType.V128;
+                    exprType = ValType.V128;
                     constInstrCount++;
                     break;
                 case REF_NULL:
                     {
                         long operand = instruction.operand(0);
-                        exprType = NewValueType.forId(operand);
+                        exprType = ValType.forId(operand);
                         constInstrCount++;
-                        if (!exprType.equals(NewValueType.ExternRef)
-                                && !exprType.equals(NewValueType.FuncRef)
-                                && !exprType.equals(NewValueType.ExnRef)) {
+                        if (!exprType.equals(ValType.ExternRef)
+                                && !exprType.equals(ValType.FuncRef)
+                                && !exprType.equals(ValType.ExnRef)) {
                             throw new IllegalStateException(
                                     "Unexpected wrong type for ref.null instruction");
                         }
@@ -481,7 +481,7 @@ final class Validator {
                     }
                 case REF_FUNC:
                     {
-                        exprType = NewValueType.FuncRef;
+                        exprType = ValType.FuncRef;
                         constInstrCount++;
                         int idx = (int) instruction.operand(0);
 
@@ -597,13 +597,13 @@ final class Validator {
                                                                 getTagType(currentCatch.tag())
                                                                         .typeIdx());
                                         pushVals(tagType.params());
-                                        pushVal(NewValueType.ExnRef);
+                                        pushVal(ValType.ExnRef);
                                         break;
                                     }
                                 case CATCH_ALL:
                                     break;
                                 case CATCH_ALL_REF:
-                                    pushVal(NewValueType.ExnRef);
+                                    pushVal(ValType.ExnRef);
                                     break;
                             }
                             popCtrl();
@@ -627,12 +627,12 @@ final class Validator {
                     }
                 case THROW_REF:
                     {
-                        popVal(NewValueType.ExnRef);
+                        popVal(ValType.ExnRef);
                         unreachable();
                         break;
                     }
                 case IF:
-                    popVal(NewValueType.I32);
+                    popVal(ValType.I32);
                     // fallthrough
                 case LOOP:
                     // t1* -> t2*
@@ -675,7 +675,7 @@ final class Validator {
                     }
                 case BR_IF:
                     {
-                        popVal(NewValueType.I32);
+                        popVal(ValType.I32);
                         var n = (int) op.operand(0);
                         var labelTypes = labelTypes(getCtrl(n));
                         popVals(labelTypes);
@@ -684,7 +684,7 @@ final class Validator {
                     }
                 case BR_TABLE:
                     {
-                        popVal(NewValueType.I32);
+                        popVal(ValType.I32);
                         var m = (int) op.operand(op.operandCount() - 1);
                         if ((ctrlFrameStack.size() - 1 - m) < 0) {
                             throw new InvalidException("unknown label " + m);
@@ -865,8 +865,8 @@ final class Validator {
                 case I32_STORE8:
                 case I32_STORE16:
                     {
-                        popVal(NewValueType.I32);
-                        popVal(NewValueType.I32);
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
                         break;
                     }
                 case I32_LOAD:
@@ -882,15 +882,15 @@ final class Validator {
                 case I32_EQZ:
                 case MEMORY_GROW:
                     {
-                        popVal(NewValueType.I32);
-                        pushVal(NewValueType.I32);
+                        popVal(ValType.I32);
+                        pushVal(ValType.I32);
                         break;
                     }
                 case TABLE_SIZE:
                 case I32_CONST:
                 case MEMORY_SIZE:
                     {
-                        pushVal(NewValueType.I32);
+                        pushVal(ValType.I32);
                         break;
                     }
                 case I32_ADD:
@@ -919,16 +919,16 @@ final class Validator {
                 case I32_ROTL:
                 case I32_ROTR:
                     {
-                        popVal(NewValueType.I32);
-                        popVal(NewValueType.I32);
-                        pushVal(NewValueType.I32);
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
+                        pushVal(ValType.I32);
                         break;
                     }
                 case I32_WRAP_I64:
                 case I64_EQZ:
                     {
-                        popVal(NewValueType.I64);
-                        pushVal(NewValueType.I32);
+                        popVal(ValType.I64);
+                        pushVal(ValType.I32);
                         break;
                     }
                 case I32_TRUNC_F32_S:
@@ -937,8 +937,8 @@ final class Validator {
                 case I32_TRUNC_SAT_F32_U:
                 case I32_REINTERPRET_F32:
                     {
-                        popVal(NewValueType.F32);
-                        pushVal(NewValueType.I32);
+                        popVal(ValType.F32);
+                        pushVal(ValType.I32);
                         break;
                     }
                 case I32_TRUNC_F64_S:
@@ -946,8 +946,8 @@ final class Validator {
                 case I32_TRUNC_SAT_F64_S:
                 case I32_TRUNC_SAT_F64_U:
                     {
-                        popVal(NewValueType.F64);
-                        pushVal(NewValueType.I32);
+                        popVal(ValType.F64);
+                        pushVal(ValType.I32);
                         break;
                     }
                 case I64_LOAD:
@@ -960,13 +960,13 @@ final class Validator {
                 case I64_EXTEND_I32_U:
                 case I64_EXTEND_I32_S:
                     {
-                        popVal(NewValueType.I32);
-                        pushVal(NewValueType.I64);
+                        popVal(ValType.I32);
+                        pushVal(ValType.I64);
                         break;
                     }
                 case I64_CONST:
                     {
-                        pushVal(NewValueType.I64);
+                        pushVal(ValType.I64);
                         break;
                     }
                 case I64_STORE:
@@ -974,8 +974,8 @@ final class Validator {
                 case I64_STORE16:
                 case I64_STORE32:
                     {
-                        popVal(NewValueType.I64);
-                        popVal(NewValueType.I32);
+                        popVal(ValType.I64);
+                        popVal(ValType.I32);
                         break;
                     }
                 case I64_ADD:
@@ -994,9 +994,9 @@ final class Validator {
                 case I64_ROTL:
                 case I64_ROTR:
                     {
-                        popVal(NewValueType.I64);
-                        popVal(NewValueType.I64);
-                        pushVal(NewValueType.I64);
+                        popVal(ValType.I64);
+                        popVal(ValType.I64);
+                        pushVal(ValType.I64);
                         break;
                     }
                 case I64_EQ:
@@ -1010,9 +1010,9 @@ final class Validator {
                 case I64_GE_S:
                 case I64_GE_U:
                     {
-                        popVal(NewValueType.I64);
-                        popVal(NewValueType.I64);
-                        pushVal(NewValueType.I32);
+                        popVal(ValType.I64);
+                        popVal(ValType.I64);
+                        pushVal(ValType.I32);
                         break;
                     }
                 case I64_CLZ:
@@ -1022,8 +1022,8 @@ final class Validator {
                 case I64_EXTEND_16_S:
                 case I64_EXTEND_32_S:
                     {
-                        popVal(NewValueType.I64);
-                        pushVal(NewValueType.I64);
+                        popVal(ValType.I64);
+                        pushVal(ValType.I64);
                         break;
                     }
                 case I64_REINTERPRET_F64:
@@ -1032,8 +1032,8 @@ final class Validator {
                 case I64_TRUNC_SAT_F64_S:
                 case I64_TRUNC_SAT_F64_U:
                     {
-                        popVal(NewValueType.F64);
-                        pushVal(NewValueType.I64);
+                        popVal(ValType.F64);
+                        pushVal(ValType.I64);
                         break;
                     }
                 case I64_TRUNC_F32_S:
@@ -1041,19 +1041,19 @@ final class Validator {
                 case I64_TRUNC_SAT_F32_S:
                 case I64_TRUNC_SAT_F32_U:
                     {
-                        popVal(NewValueType.F32);
-                        pushVal(NewValueType.I64);
+                        popVal(ValType.F32);
+                        pushVal(ValType.I64);
                         break;
                     }
                 case F32_STORE:
                     {
-                        popVal(NewValueType.F32);
-                        popVal(NewValueType.I32);
+                        popVal(ValType.F32);
+                        popVal(ValType.I32);
                         break;
                     }
                 case F32_CONST:
                     {
-                        pushVal(NewValueType.F32);
+                        pushVal(ValType.F32);
                         break;
                     }
                 case F32_LOAD:
@@ -1061,43 +1061,43 @@ final class Validator {
                 case F32_CONVERT_I32_U:
                 case F32_REINTERPRET_I32:
                     {
-                        popVal(NewValueType.I32);
-                        pushVal(NewValueType.F32);
+                        popVal(ValType.I32);
+                        pushVal(ValType.F32);
                         break;
                     }
                 case F32_CONVERT_I64_S:
                 case F32_CONVERT_I64_U:
                     {
-                        popVal(NewValueType.I64);
-                        pushVal(NewValueType.F32);
+                        popVal(ValType.I64);
+                        pushVal(ValType.F32);
                         break;
                     }
                 case F64_LOAD:
                 case F64_CONVERT_I32_S:
                 case F64_CONVERT_I32_U:
                     {
-                        popVal(NewValueType.I32);
-                        pushVal(NewValueType.F64);
+                        popVal(ValType.I32);
+                        pushVal(ValType.F64);
                         break;
                     }
                 case F64_CONVERT_I64_S:
                 case F64_CONVERT_I64_U:
                 case F64_REINTERPRET_I64:
                     {
-                        popVal(NewValueType.I64);
-                        pushVal(NewValueType.F64);
+                        popVal(ValType.I64);
+                        pushVal(ValType.F64);
                         break;
                     }
                 case F64_PROMOTE_F32:
                     {
-                        popVal(NewValueType.F32);
-                        pushVal(NewValueType.F64);
+                        popVal(ValType.F32);
+                        pushVal(ValType.F64);
                         break;
                     }
                 case F32_DEMOTE_F64:
                     {
-                        popVal(NewValueType.F64);
-                        pushVal(NewValueType.F32);
+                        popVal(ValType.F64);
+                        pushVal(ValType.F32);
                         break;
                     }
                 case F32_SQRT:
@@ -1108,8 +1108,8 @@ final class Validator {
                 case F32_TRUNC:
                 case F32_NEAREST:
                     {
-                        popVal(NewValueType.F32);
-                        pushVal(NewValueType.F32);
+                        popVal(ValType.F32);
+                        pushVal(ValType.F32);
                         break;
                     }
                 case F32_ADD:
@@ -1120,9 +1120,9 @@ final class Validator {
                 case F32_MAX:
                 case F32_COPYSIGN:
                     {
-                        popVal(NewValueType.F32);
-                        popVal(NewValueType.F32);
-                        pushVal(NewValueType.F32);
+                        popVal(ValType.F32);
+                        popVal(ValType.F32);
+                        pushVal(ValType.F32);
                         break;
                     }
                 case F32_EQ:
@@ -1132,20 +1132,20 @@ final class Validator {
                 case F32_GT:
                 case F32_GE:
                     {
-                        popVal(NewValueType.F32);
-                        popVal(NewValueType.F32);
-                        pushVal(NewValueType.I32);
+                        popVal(ValType.F32);
+                        popVal(ValType.F32);
+                        pushVal(ValType.I32);
                         break;
                     }
                 case F64_STORE:
                     {
-                        popVal(NewValueType.F64);
-                        popVal(NewValueType.I32);
+                        popVal(ValType.F64);
+                        popVal(ValType.I32);
                         break;
                     }
                 case F64_CONST:
                     {
-                        pushVal(NewValueType.F64);
+                        pushVal(ValType.F64);
                         break;
                     }
                 case F64_SQRT:
@@ -1156,8 +1156,8 @@ final class Validator {
                 case F64_TRUNC:
                 case F64_NEAREST:
                     {
-                        popVal(NewValueType.F64);
-                        pushVal(NewValueType.F64);
+                        popVal(ValType.F64);
+                        pushVal(ValType.F64);
                         break;
                     }
                 case F64_ADD:
@@ -1168,9 +1168,9 @@ final class Validator {
                 case F64_MAX:
                 case F64_COPYSIGN:
                     {
-                        popVal(NewValueType.F64);
-                        popVal(NewValueType.F64);
-                        pushVal(NewValueType.F64);
+                        popVal(ValType.F64);
+                        popVal(ValType.F64);
+                        pushVal(ValType.F64);
                         break;
                     }
                 case F64_EQ:
@@ -1180,15 +1180,15 @@ final class Validator {
                 case F64_GT:
                 case F64_GE:
                     {
-                        popVal(NewValueType.F64);
-                        popVal(NewValueType.F64);
-                        pushVal(NewValueType.I32);
+                        popVal(ValType.F64);
+                        popVal(ValType.F64);
+                        pushVal(ValType.I32);
                         break;
                     }
                 case LOCAL_SET:
                     {
                         var index = (int) op.operand(0);
-                        NewValueType expectedType =
+                        ValType expectedType =
                                 (index < inputLen)
                                         ? functionType.params().get(index)
                                         : getLocalType(localTypes, index - inputLen);
@@ -1198,7 +1198,7 @@ final class Validator {
                 case LOCAL_GET:
                     {
                         var index = (int) op.operand(0);
-                        NewValueType expectedType =
+                        ValType expectedType =
                                 (index < inputLen)
                                         ? functionType.params().get(index)
                                         : getLocalType(localTypes, index - inputLen);
@@ -1208,7 +1208,7 @@ final class Validator {
                 case LOCAL_TEE:
                     {
                         var index = (int) op.operand(0);
-                        NewValueType expectedType =
+                        ValType expectedType =
                                 (index < inputLen)
                                         ? functionType.params().get(index)
                                         : getLocalType(localTypes, index - inputLen);
@@ -1239,7 +1239,7 @@ final class Validator {
                     break;
                 case REF_NULL:
                     {
-                        pushVal(NewValueType.forId(op.operand(0)));
+                        pushVal(ValType.forId(op.operand(0)));
                         break;
                     }
                 case REF_IS_NULL:
@@ -1249,7 +1249,7 @@ final class Validator {
                             throw new InvalidException(
                                     "type mismatch: expected FuncRef or ExtRef, but was " + ref);
                         }
-                        pushVal(NewValueType.I32);
+                        pushVal(ValType.I32);
                         break;
                     }
                 case REF_FUNC:
@@ -1259,12 +1259,12 @@ final class Validator {
                                 && !declaredFunctions.contains(idx)) {
                             throw new InvalidException("undeclared function reference");
                         }
-                        pushVal(NewValueType.FuncRef);
+                        pushVal(ValType.FuncRef);
                         break;
                     }
                 case SELECT:
                     {
-                        popVal(NewValueType.I32);
+                        popVal(ValType.I32);
                         var t1 = popVal();
                         var t2 = popVal();
                         if (!(isNum(t1) && isNum(t2))) {
@@ -1272,12 +1272,12 @@ final class Validator {
                                     "type mismatch: select should have numeric arguments");
                         }
                         if (!t1.equals(t2)
-                                && !t1.equals(NewValueType.UNKNOWN)
-                                && !t2.equals(NewValueType.UNKNOWN)) {
+                                && !t1.equals(ValType.UNKNOWN)
+                                && !t2.equals(ValType.UNKNOWN)) {
                             throw new InvalidException(
                                     "type mismatch, in SELECT t1: " + t1 + ", t2: " + t2);
                         }
-                        if (t1.equals(NewValueType.UNKNOWN)) {
+                        if (t1.equals(ValType.UNKNOWN)) {
                             pushVal(t2);
                         } else {
                             pushVal(t1);
@@ -1286,11 +1286,11 @@ final class Validator {
                     }
                 case SELECT_T:
                     {
-                        popVal(NewValueType.I32);
+                        popVal(ValType.I32);
                         if (op.operands().length <= 0 || op.operands().length > 1) {
                             throw new InvalidException("invalid result arity");
                         }
-                        var t = NewValueType.forId(op.operand(0));
+                        var t = ValType.forId(op.operand(0));
                         popVal(t);
                         popVal(t);
                         pushVal(t);
@@ -1309,9 +1309,9 @@ final class Validator {
                                             + table2);
                         }
 
-                        popVal(NewValueType.I32);
-                        popVal(NewValueType.I32);
-                        popVal(NewValueType.I32);
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
                         break;
                     }
                 case TABLE_INIT:
@@ -1328,44 +1328,44 @@ final class Validator {
                                             + elem.type());
                         }
 
-                        popVal(NewValueType.I32);
-                        popVal(NewValueType.I32);
-                        popVal(NewValueType.I32);
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
                         break;
                     }
                 case MEMORY_COPY:
                 case MEMORY_FILL:
                 case MEMORY_INIT:
                     {
-                        popVal(NewValueType.I32);
-                        popVal(NewValueType.I32);
-                        popVal(NewValueType.I32);
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
+                        popVal(ValType.I32);
                         break;
                     }
                 case TABLE_FILL:
                     {
-                        popVal(NewValueType.I32);
+                        popVal(ValType.I32);
                         popVal(getTableType((int) op.operand(0)));
-                        popVal(NewValueType.I32);
+                        popVal(ValType.I32);
                         break;
                     }
                 case TABLE_GET:
                     {
-                        popVal(NewValueType.I32);
+                        popVal(ValType.I32);
                         pushVal(getTableType((int) op.operand(0)));
                         break;
                     }
                 case TABLE_SET:
                     {
                         popVal(getTableType((int) op.operand(0)));
-                        popVal(NewValueType.I32);
+                        popVal(ValType.I32);
                         break;
                     }
                 case TABLE_GROW:
                     {
-                        popVal(NewValueType.I32);
+                        popVal(ValType.I32);
                         popVal(getTableType((int) op.operand(0)));
-                        pushVal(NewValueType.I32);
+                        pushVal(ValType.I32);
                         break;
                     }
                 case ELEM_DROP:
@@ -1391,31 +1391,31 @@ final class Validator {
                 case I16x8_SPLAT:
                 case I32x4_SPLAT:
                     {
-                        popVal(NewValueType.I32);
-                        pushVal(NewValueType.V128);
+                        popVal(ValType.I32);
+                        pushVal(ValType.V128);
                         break;
                     }
                 case F32x4_SPLAT:
                     {
-                        popVal(NewValueType.F32);
-                        pushVal(NewValueType.V128);
+                        popVal(ValType.F32);
+                        pushVal(ValType.V128);
                         break;
                     }
                 case I64x2_SPLAT:
                     {
-                        popVal(NewValueType.I64);
-                        pushVal(NewValueType.V128);
+                        popVal(ValType.I64);
+                        pushVal(ValType.V128);
                         break;
                     }
                 case F64x2_SPLAT:
                     {
-                        popVal(NewValueType.F64);
-                        pushVal(NewValueType.V128);
+                        popVal(ValType.F64);
+                        pushVal(ValType.V128);
                         break;
                     }
                 case V128_CONST:
                     {
-                        pushVal(NewValueType.V128);
+                        pushVal(ValType.V128);
                         break;
                     }
                 case I8x16_REPLACE_LANE:
@@ -1434,30 +1434,30 @@ final class Validator {
                 case I64x2_SHR_S:
                 case I64x2_SHR_U:
                     {
-                        popVal(NewValueType.I32);
-                        popVal(NewValueType.V128);
-                        pushVal(NewValueType.V128);
+                        popVal(ValType.I32);
+                        popVal(ValType.V128);
+                        pushVal(ValType.V128);
                         break;
                     }
                 case I64x2_REPLACE_LANE:
                     {
-                        popVal(NewValueType.I64);
-                        popVal(NewValueType.V128);
-                        pushVal(NewValueType.V128);
+                        popVal(ValType.I64);
+                        popVal(ValType.V128);
+                        pushVal(ValType.V128);
                         break;
                     }
                 case F32x4_REPLACE_LANE:
                     {
-                        popVal(NewValueType.F32);
-                        popVal(NewValueType.V128);
-                        pushVal(NewValueType.V128);
+                        popVal(ValType.F32);
+                        popVal(ValType.V128);
+                        pushVal(ValType.V128);
                         break;
                     }
                 case F64x2_REPLACE_LANE:
                     {
-                        popVal(NewValueType.F64);
-                        popVal(NewValueType.V128);
-                        pushVal(NewValueType.V128);
+                        popVal(ValType.F64);
+                        popVal(ValType.V128);
+                        pushVal(ValType.V128);
                         break;
                     }
                 case I8x16_ALL_TRUE:
@@ -1474,26 +1474,26 @@ final class Validator {
                 case I16x8_EXTRACT_LANE_U:
                 case I32x4_EXTRACT_LANE:
                     {
-                        popVal(NewValueType.V128);
-                        pushVal(NewValueType.I32);
+                        popVal(ValType.V128);
+                        pushVal(ValType.I32);
                         break;
                     }
                 case F32x4_EXTRACT_LANE:
                     {
-                        popVal(NewValueType.V128);
-                        pushVal(NewValueType.F32);
+                        popVal(ValType.V128);
+                        pushVal(ValType.F32);
                         break;
                     }
                 case I64x2_EXTRACT_LANE:
                     {
-                        popVal(NewValueType.V128);
-                        pushVal(NewValueType.I64);
+                        popVal(ValType.V128);
+                        pushVal(ValType.I64);
                         break;
                     }
                 case F64x2_EXTRACT_LANE:
                     {
-                        popVal(NewValueType.V128);
-                        pushVal(NewValueType.F64);
+                        popVal(ValType.V128);
+                        pushVal(ValType.F64);
                         break;
                     }
                 case I8x16_SHUFFLE:
@@ -1618,9 +1618,9 @@ final class Validator {
                 case V128_OR:
                 case V128_XOR:
                     {
-                        popVal(NewValueType.V128);
-                        popVal(NewValueType.V128);
-                        pushVal(NewValueType.V128);
+                        popVal(ValType.V128);
+                        popVal(ValType.V128);
+                        pushVal(ValType.V128);
                         break;
                     }
                 case I8x16_NEG:
@@ -1674,22 +1674,22 @@ final class Validator {
                 case I64x2_ABS:
                 case V128_NOT:
                     {
-                        popVal(NewValueType.V128);
-                        pushVal(NewValueType.V128);
+                        popVal(ValType.V128);
+                        pushVal(ValType.V128);
                         break;
                     }
                 case V128_BITSELECT:
                     {
-                        popVal(NewValueType.V128);
-                        popVal(NewValueType.V128);
-                        popVal(NewValueType.V128);
-                        pushVal(NewValueType.V128);
+                        popVal(ValType.V128);
+                        popVal(ValType.V128);
+                        popVal(ValType.V128);
+                        pushVal(ValType.V128);
                         break;
                     }
                 case V128_ANY_TRUE:
                     {
-                        popVal(NewValueType.V128);
-                        pushVal(NewValueType.I32);
+                        popVal(ValType.V128);
+                        pushVal(ValType.I32);
                         break;
                     }
                 case V128_STORE:
@@ -1698,8 +1698,8 @@ final class Validator {
                 case V128_STORE32_LANE:
                 case V128_STORE64_LANE:
                     {
-                        popVal(NewValueType.V128);
-                        popVal(NewValueType.I32);
+                        popVal(ValType.V128);
+                        popVal(ValType.I32);
                         break;
                     }
                 case V128_LOAD8_LANE:
@@ -1707,9 +1707,9 @@ final class Validator {
                 case V128_LOAD32_LANE:
                 case V128_LOAD64_LANE:
                     {
-                        popVal(NewValueType.V128);
-                        popVal(NewValueType.I32);
-                        pushVal(NewValueType.V128);
+                        popVal(ValType.V128);
+                        popVal(ValType.I32);
+                        pushVal(ValType.V128);
                         break;
                     }
                 default:
@@ -1740,9 +1740,9 @@ final class Validator {
     }
 
     private void VALIDATE_CALL_INDIRECT(long typeId, int tableId) {
-        popVal(NewValueType.I32);
+        popVal(ValType.I32);
         var tableType = getTableType(tableId);
-        if (!tableType.equals(NewValueType.FuncRef)) {
+        if (!tableType.equals(ValType.FuncRef)) {
             throw new InvalidException(
                     "type mismatch expected a table of FuncRefs buf found " + tableType);
         }

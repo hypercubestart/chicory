@@ -85,7 +85,7 @@ public final class HostModuleProcessor extends AbstractModuleProcessor {
         cu.addImport("com.dylibso.chicory.runtime.Instance");
         cu.addImport("com.dylibso.chicory.wasm.types.Value");
         cu.addImport("com.dylibso.chicory.wasm.types.FunctionType");
-        cu.addImport("com.dylibso.chicory.wasm.types.NewValueType");
+        cu.addImport("com.dylibso.chicory.wasm.types.ValType");
         cu.addImport("java.util.List");
 
         var typeName = type.getSimpleName().toString();
@@ -304,6 +304,6 @@ public final class HostModuleProcessor extends AbstractModuleProcessor {
     }
 
     private static Expression valueType(String type) {
-        return new FieldAccessExpr(new NameExpr("NewValueType"), type);
+        return new FieldAccessExpr(new NameExpr("ValType"), type);
     }
 }

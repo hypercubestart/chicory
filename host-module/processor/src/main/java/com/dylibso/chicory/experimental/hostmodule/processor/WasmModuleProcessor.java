@@ -12,7 +12,7 @@ import com.dylibso.chicory.wasm.WasmModule;
 import com.dylibso.chicory.wasm.types.ExternalType;
 import com.dylibso.chicory.wasm.types.FunctionImport;
 import com.dylibso.chicory.wasm.types.Import;
-import com.dylibso.chicory.wasm.types.NewValueType;
+import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
 import com.github.javaparser.ast.ArrayCreationLevel;
 import com.github.javaparser.ast.CompilationUnit;
@@ -86,15 +86,15 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
         return false;
     }
 
-    private Class javaClassFromValueType(NewValueType type) {
+    private Class javaClassFromValueType(ValType type) {
         switch (type.opcode()) {
-            case NewValueType.ID.I32:
+            case ValType.ID.I32:
                 return int.class;
-            case NewValueType.ID.I64:
+            case ValType.ID.I64:
                 return long.class;
-            case NewValueType.ID.F32:
+            case ValType.ID.F32:
                 return float.class;
-            case NewValueType.ID.F64:
+            case ValType.ID.F64:
                 return double.class;
             default:
                 log(ERROR, "Unsupported WASM type: " + type, currentElement);
@@ -102,17 +102,17 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
         }
     }
 
-    private Expression toLong(NewValueType type, Expression nameExpr, CompilationUnit cu) {
+    private Expression toLong(ValType type, Expression nameExpr, CompilationUnit cu) {
         switch (type.opcode()) {
-            case NewValueType.ID.I32:
+            case ValType.ID.I32:
                 return new CastExpr(parseType("long"), nameExpr);
-            case NewValueType.ID.I64:
+            case ValType.ID.I64:
                 return nameExpr;
-            case NewValueType.ID.F32:
+            case ValType.ID.F32:
                 cu.addImport(Value.class);
                 return new MethodCallExpr(
                         new NameExpr("Value"), "floatToLong", new NodeList<>(nameExpr));
-            case NewValueType.ID.F64:
+            case ValType.ID.F64:
                 cu.addImport(Value.class);
                 return new MethodCallExpr(
                         new NameExpr("Value"), "doubleToLong", new NodeList<>(nameExpr));
@@ -122,17 +122,17 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
         }
     }
 
-    private Expression fromLong(NewValueType type, Expression nameExpr, CompilationUnit cu) {
+    private Expression fromLong(ValType type, Expression nameExpr, CompilationUnit cu) {
         switch (type.opcode()) {
-            case NewValueType.ID.I32:
+            case ValType.ID.I32:
                 return new CastExpr(parseType("int"), nameExpr);
-            case NewValueType.ID.I64:
+            case ValType.ID.I64:
                 return nameExpr;
-            case NewValueType.ID.F32:
+            case ValType.ID.F32:
                 cu.addImport(Value.class);
                 return new MethodCallExpr(
                         new NameExpr("Value"), "longToFloat", new NodeList<>(nameExpr));
-            case NewValueType.ID.F64:
+            case ValType.ID.F64:
                 cu.addImport(Value.class);
                 return new MethodCallExpr(
                         new NameExpr("Value"), "longToDouble", new NodeList<>(nameExpr));
@@ -151,24 +151,24 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
         return cu;
     }
 
-    private Expression listOfValueTypes(List<NewValueType> newValueTypes) {
+    private Expression listOfValueTypes(List<ValType> valTypes) {
         List<Expression> values =
-                newValueTypes.stream()
+                valTypes.stream()
                         .map(
                                 vt -> {
                                     switch (vt.opcode()) {
-                                        case NewValueType.ID.I32:
+                                        case ValType.ID.I32:
                                             return new FieldAccessExpr(
-                                                    new NameExpr("NewValueType"), "I32");
-                                        case NewValueType.ID.I64:
+                                                    new NameExpr("ValType"), "I32");
+                                        case ValType.ID.I64:
                                             return new FieldAccessExpr(
-                                                    new NameExpr("NewValueType"), "I64");
-                                        case NewValueType.ID.F32:
+                                                    new NameExpr("ValType"), "I64");
+                                        case ValType.ID.F32:
                                             return new FieldAccessExpr(
-                                                    new NameExpr("NewValueType"), "F32");
-                                        case NewValueType.ID.F64:
+                                                    new NameExpr("ValType"), "F32");
+                                        case ValType.ID.F64:
                                             return new FieldAccessExpr(
-                                                    new NameExpr("NewValueType"), "F64");
+                                                    new NameExpr("ValType"), "F64");
                                         default:
                                             log(
                                                     ERROR,
@@ -477,7 +477,7 @@ public final class WasmModuleProcessor extends AbstractModuleProcessor {
                         assert (importedFun.importType() == ExternalType.FUNCTION);
                         // needed to generate the functions signatures
                         importsCu.addImport(List.class);
-                        importsCu.addImport(NewValueType.class);
+                        importsCu.addImport(ValType.class);
                         importsCu.addImport("com.dylibso.chicory.runtime.Instance");
                         importsCu.addImport("com.dylibso.chicory.runtime.HostFunction");
 

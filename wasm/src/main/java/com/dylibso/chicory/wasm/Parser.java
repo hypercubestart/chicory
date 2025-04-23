@@ -42,7 +42,6 @@ import com.dylibso.chicory.wasm.types.MemoryLimits;
 import com.dylibso.chicory.wasm.types.MemorySection;
 import com.dylibso.chicory.wasm.types.MutabilityType;
 import com.dylibso.chicory.wasm.types.NameCustomSection;
-import com.dylibso.chicory.wasm.types.NewValueType;
 import com.dylibso.chicory.wasm.types.OpCode;
 import com.dylibso.chicory.wasm.types.PassiveDataSegment;
 import com.dylibso.chicory.wasm.types.PassiveElement;
@@ -59,6 +58,7 @@ import com.dylibso.chicory.wasm.types.TagSection;
 import com.dylibso.chicory.wasm.types.TagType;
 import com.dylibso.chicory.wasm.types.TypeSection;
 import com.dylibso.chicory.wasm.types.UnknownCustomSection;
+import com.dylibso.chicory.wasm.types.ValType;
 import com.dylibso.chicory.wasm.types.Value;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -471,7 +471,7 @@ public final class Parser {
 
             // Parse function types (form = 0x60)
             var paramCount = (int) readVarUInt32(buffer);
-            var params = new NewValueType[paramCount];
+            var params = new ValType[paramCount];
 
             // Parse parameter types
             for (int j = 0; j < paramCount; j++) {
@@ -479,7 +479,7 @@ public final class Parser {
             }
 
             var returnCount = (int) readVarUInt32(buffer);
-            var returns = new NewValueType[returnCount];
+            var returns = new ValType[returnCount];
 
             // Parse return types
             for (int j = 0; j < returnCount; j++) {
@@ -523,9 +523,7 @@ public final class Parser {
                         var rawTableType = readVarUInt32(buffer);
                         assert rawTableType == 0x70 || rawTableType == 0x6F;
                         var tableType =
-                                (rawTableType == 0x70)
-                                        ? NewValueType.FuncRef
-                                        : NewValueType.ExternRef;
+                                (rawTableType == 0x70) ? ValType.FuncRef : ValType.ExternRef;
 
                         var limitType = readByte(buffer);
                         assert limitType == 0x00 || limitType == 0x01;
@@ -736,19 +734,19 @@ public final class Parser {
             offset = List.of(parseExpression(buffer));
         }
         // common path
-        NewValueType type;
+        ValType type;
         if (alwaysFuncRef) {
-            type = NewValueType.FuncRef;
+            type = ValType.FuncRef;
         } else if (hasElemKind) {
             int ek = (int) readVarUInt32(buffer);
             if (ek == 0x00) {
-                type = NewValueType.FuncRef;
+                type = ValType.FuncRef;
             } else {
                 throw new ChicoryException("Invalid element kind");
             }
         } else {
             assert hasRefType;
-            type = NewValueType.refTypeForId(readValueType(buffer).id());
+            type = ValType.refTypeForId(readValueType(buffer).id());
         }
         int initCnt = Math.toIntExact(readVarUInt32(buffer));
         List<List<Instruction>> inits = new ArrayList<>(initCnt);
@@ -777,9 +775,9 @@ public final class Parser {
         return new ActiveElement(type, inits, tableIdx, offset);
     }
 
-    private static List<NewValueType> parseCodeSectionLocalTypes(ByteBuffer buffer) {
+    private static List<ValType> parseCodeSectionLocalTypes(ByteBuffer buffer) {
         var distinctTypesCount = readVarUInt32(buffer);
-        var locals = new ArrayList<NewValueType>();
+        var locals = new ArrayList<ValType>();
 
         for (int i = 0; i < distinctTypesCount; i++) {
             var numberOfLocals = readVarUInt32(buffer);
@@ -1136,9 +1134,9 @@ public final class Parser {
                     }
                 case BLOCK_TYPE:
                     var operand = (int) readVarUInt32(buffer);
-                    if (NewValueType.ID.isValidOpcode(operand)) {
+                    if (ValType.ID.isValidOpcode(operand)) {
                         // is value type
-                        NewValueType v = readValueTypeFromOpCode(buffer, operand);
+                        ValType v = readValueTypeFromOpCode(buffer, operand);
                         operands.add(v.id());
                     } else {
                         operands.add((long) operand);
@@ -1235,15 +1233,15 @@ public final class Parser {
         }
     }
 
-    private static NewValueType readValueTypeFromOpCode(ByteBuffer buffer, int valueTypeOpCode) {
-        if (valueTypeOpCode == NewValueType.ID.Ref || valueTypeOpCode == NewValueType.ID.RefNull) {
-            return new NewValueType(valueTypeOpCode, (int) readVarSInt32(buffer));
+    private static ValType readValueTypeFromOpCode(ByteBuffer buffer, int valueTypeOpCode) {
+        if (valueTypeOpCode == ValType.ID.Ref || valueTypeOpCode == ValType.ID.RefNull) {
+            return new ValType(valueTypeOpCode, (int) readVarSInt32(buffer));
         } else {
-            return new NewValueType(valueTypeOpCode);
+            return new ValType(valueTypeOpCode);
         }
     }
 
-    private static NewValueType readValueType(ByteBuffer buffer) {
+    private static ValType readValueType(ByteBuffer buffer) {
         var valueTypeOpCode = (int) readVarUInt32(buffer);
 
         return readValueTypeFromOpCode(buffer, valueTypeOpCode);
