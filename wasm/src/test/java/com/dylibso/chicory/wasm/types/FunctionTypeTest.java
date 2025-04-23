@@ -1,9 +1,9 @@
 package com.dylibso.chicory.wasm.types;
 
-import static com.dylibso.chicory.wasm.types.ValueType.F32;
-import static com.dylibso.chicory.wasm.types.ValueType.I32;
-import static com.dylibso.chicory.wasm.types.ValueType.I64;
-import static com.dylibso.chicory.wasm.types.ValueType.V128;
+import static com.dylibso.chicory.wasm.types.NewValueType.F32;
+import static com.dylibso.chicory.wasm.types.NewValueType.I32;
+import static com.dylibso.chicory.wasm.types.NewValueType.I64;
+import static com.dylibso.chicory.wasm.types.NewValueType.V128;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;

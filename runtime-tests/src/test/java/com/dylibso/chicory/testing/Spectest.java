@@ -11,10 +11,10 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.TableInstance;
 import com.dylibso.chicory.runtime.WasmFunctionHandle;
 import com.dylibso.chicory.wasm.types.MemoryLimits;
+import com.dylibso.chicory.wasm.types.NewValueType;
 import com.dylibso.chicory.wasm.types.Table;
 import com.dylibso.chicory.wasm.types.TableLimits;
 import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.types.ValueType;
 import java.util.List;
 
 // https://github.com/WebAssembly/spec/blob/ee82c8e50c5106e0cedada0a083d4cc4129034a2/interpreter/host/spectest.ml
@@ -28,40 +28,72 @@ public final class Spectest {
                 .addFunction(new HostFunction("spectest", "print", List.of(), List.of(), noop))
                 .addFunction(
                         new HostFunction(
-                                "spectest", "print_i32", List.of(ValueType.I32), List.of(), noop))
-                .addFunction(
-                        new HostFunction(
-                                "spectest", "print_i32_1", List.of(ValueType.I32), List.of(), noop))
-                .addFunction(
-                        new HostFunction(
-                                "spectest", "print_i32_2", List.of(ValueType.I32), List.of(), noop))
-                .addFunction(
-                        new HostFunction(
-                                "spectest", "print_f32", List.of(ValueType.F32), List.of(), noop))
-                .addFunction(
-                        new HostFunction(
                                 "spectest",
-                                "print_i32_f32",
-                                List.of(ValueType.I32, ValueType.F32),
+                                "print_i32",
+                                List.of(NewValueType.I32),
                                 List.of(),
                                 noop))
                 .addFunction(
                         new HostFunction(
-                                "spectest", "print_i64", List.of(ValueType.I64), List.of(), noop))
+                                "spectest",
+                                "print_i32_1",
+                                List.of(NewValueType.I32),
+                                List.of(),
+                                noop))
                 .addFunction(
                         new HostFunction(
-                                "spectest", "print_i64_1", List.of(ValueType.I64), List.of(), noop))
+                                "spectest",
+                                "print_i32_2",
+                                List.of(NewValueType.I32),
+                                List.of(),
+                                noop))
                 .addFunction(
                         new HostFunction(
-                                "spectest", "print_i64_2", List.of(ValueType.I64), List.of(), noop))
+                                "spectest",
+                                "print_f32",
+                                List.of(NewValueType.F32),
+                                List.of(),
+                                noop))
                 .addFunction(
                         new HostFunction(
-                                "spectest", "print_f64", List.of(ValueType.F64), List.of(), noop))
+                                "spectest",
+                                "print_i32_f32",
+                                List.of(NewValueType.I32, NewValueType.F32),
+                                List.of(),
+                                noop))
+                .addFunction(
+                        new HostFunction(
+                                "spectest",
+                                "print_i64",
+                                List.of(NewValueType.I64),
+                                List.of(),
+                                noop))
+                .addFunction(
+                        new HostFunction(
+                                "spectest",
+                                "print_i64_1",
+                                List.of(NewValueType.I64),
+                                List.of(),
+                                noop))
+                .addFunction(
+                        new HostFunction(
+                                "spectest",
+                                "print_i64_2",
+                                List.of(NewValueType.I64),
+                                List.of(),
+                                noop))
+                .addFunction(
+                        new HostFunction(
+                                "spectest",
+                                "print_f64",
+                                List.of(NewValueType.F64),
+                                List.of(),
+                                noop))
                 .addFunction(
                         new HostFunction(
                                 "spectest",
                                 "print_f64_f64",
-                                List.of(ValueType.F64, ValueType.F64),
+                                List.of(NewValueType.F64, NewValueType.F64),
                                 List.of(),
                                 noop))
                 .addGlobal(
@@ -88,7 +120,7 @@ public final class Spectest {
                                 "spectest",
                                 "table",
                                 new TableInstance(
-                                        new Table(ValueType.FuncRef, new TableLimits(10, 20)))))
+                                        new Table(NewValueType.FuncRef, new TableLimits(10, 20)))))
                 .build();
     }
 }

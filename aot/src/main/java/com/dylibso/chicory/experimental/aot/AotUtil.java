@@ -14,8 +14,8 @@ import com.dylibso.chicory.runtime.Instance;
 import com.dylibso.chicory.runtime.Memory;
 import com.dylibso.chicory.wasm.types.FunctionBody;
 import com.dylibso.chicory.wasm.types.FunctionType;
+import com.dylibso.chicory.wasm.types.NewValueType;
 import com.dylibso.chicory.wasm.types.Value;
-import com.dylibso.chicory.wasm.types.ValueType;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -51,41 +51,41 @@ final class AotUtil {
         }
     }
 
-    public static Class<?> jvmType(ValueType type) {
+    public static Class<?> jvmType(NewValueType type) {
         switch (type.opcode()) {
-            case ValueType.ID.I32:
-            case ValueType.ID.Ref:
-            case ValueType.ID.RefNull:
+            case NewValueType.ID.I32:
+            case NewValueType.ID.Ref:
+            case NewValueType.ID.RefNull:
                 return int.class;
-            case ValueType.ID.I64:
+            case NewValueType.ID.I64:
                 return long.class;
-            case ValueType.ID.F32:
+            case NewValueType.ID.F32:
                 return float.class;
-            case ValueType.ID.F64:
+            case NewValueType.ID.F64:
                 return double.class;
             default:
-                throw new IllegalArgumentException("Unsupported ValueType: " + type);
+                throw new IllegalArgumentException("Unsupported NewValueType: " + type);
         }
     }
 
-    public static Type asmType(ValueType type) {
+    public static Type asmType(NewValueType type) {
         switch (type.opcode()) {
-            case ValueType.ID.I32:
-            case ValueType.ID.Ref:
-            case ValueType.ID.RefNull:
+            case NewValueType.ID.I32:
+            case NewValueType.ID.Ref:
+            case NewValueType.ID.RefNull:
                 return INT_TYPE;
-            case ValueType.ID.I64:
+            case NewValueType.ID.I64:
                 return LONG_TYPE;
-            case ValueType.ID.F32:
+            case NewValueType.ID.F32:
                 return FLOAT_TYPE;
-            case ValueType.ID.F64:
+            case NewValueType.ID.F64:
                 return DOUBLE_TYPE;
             default:
                 throw new IllegalArgumentException("Unsupported type: " + type);
         }
     }
 
-    public static ValueType localType(FunctionType type, FunctionBody body, int localIndex) {
+    public static NewValueType localType(FunctionType type, FunctionBody body, int localIndex) {
         if (localIndex < type.params().size()) {
             return type.params().get(localIndex);
         } else {
@@ -93,47 +93,47 @@ final class AotUtil {
         }
     }
 
-    public static void emitLongToJvm(MethodVisitor asm, ValueType type) {
+    public static void emitLongToJvm(MethodVisitor asm, NewValueType type) {
         switch (type.opcode()) {
-            case ValueType.ID.I32:
-            case ValueType.ID.Ref:
-            case ValueType.ID.RefNull:
+            case NewValueType.ID.I32:
+            case NewValueType.ID.Ref:
+            case NewValueType.ID.RefNull:
                 asm.visitInsn(Opcodes.L2I);
                 return;
-            case ValueType.ID.I64:
+            case NewValueType.ID.I64:
                 return;
-            case ValueType.ID.F32:
+            case NewValueType.ID.F32:
                 emitInvokeStatic(asm, LONG_TO_F32);
                 return;
-            case ValueType.ID.F64:
+            case NewValueType.ID.F64:
                 emitInvokeStatic(asm, LONG_TO_F64);
                 return;
             default:
-                throw new IllegalArgumentException("Unsupported ValueType: " + type);
+                throw new IllegalArgumentException("Unsupported NewValueType: " + type);
         }
     }
 
-    public static void emitJvmToLong(MethodVisitor asm, ValueType type) {
+    public static void emitJvmToLong(MethodVisitor asm, NewValueType type) {
         switch (type.opcode()) {
-            case ValueType.ID.I32:
-            case ValueType.ID.Ref:
-            case ValueType.ID.RefNull:
+            case NewValueType.ID.I32:
+            case NewValueType.ID.Ref:
+            case NewValueType.ID.RefNull:
                 asm.visitInsn(Opcodes.I2L);
                 return;
-            case ValueType.ID.I64:
+            case NewValueType.ID.I64:
                 return;
-            case ValueType.ID.F32:
+            case NewValueType.ID.F32:
                 emitInvokeStatic(asm, F32_TO_LONG);
                 return;
-            case ValueType.ID.F64:
+            case NewValueType.ID.F64:
                 emitInvokeStatic(asm, F64_TO_LONG);
                 return;
             default:
-                throw new IllegalArgumentException("Unsupported ValueType: " + type);
+                throw new IllegalArgumentException("Unsupported NewValueType: " + type);
         }
     }
 
-    public static MethodType valueMethodType(List<ValueType> types) {
+    public static MethodType valueMethodType(List<NewValueType> types) {
         return methodType(long[].class, jvmTypes(types));
     }
 
@@ -156,7 +156,7 @@ final class AotUtil {
         return methodType(jvmReturnType(type), paramsTypes);
     }
 
-    public static Class<?>[] jvmTypes(List<ValueType> types) {
+    public static Class<?>[] jvmTypes(List<NewValueType> types) {
         return types.stream().map(AotUtil::jvmType).toArray(Class[]::new);
     }
 
@@ -175,40 +175,40 @@ final class AotUtil {
         }
     }
 
-    public static Object defaultValue(ValueType type) {
+    public static Object defaultValue(NewValueType type) {
         switch (type.opcode()) {
-            case ValueType.ID.I32:
+            case NewValueType.ID.I32:
                 return 0;
-            case ValueType.ID.I64:
+            case NewValueType.ID.I64:
                 return 0L;
-            case ValueType.ID.F32:
+            case NewValueType.ID.F32:
                 return 0.0f;
-            case ValueType.ID.F64:
+            case NewValueType.ID.F64:
                 return 0.0d;
-            case ValueType.ID.Ref:
-            case ValueType.ID.RefNull:
+            case NewValueType.ID.Ref:
+            case NewValueType.ID.RefNull:
                 return REF_NULL_VALUE;
             default:
-                throw new IllegalArgumentException("Unsupported ValueType: " + type);
+                throw new IllegalArgumentException("Unsupported NewValueType: " + type);
         }
     }
 
-    public static int slotCount(ValueType type) {
+    public static int slotCount(NewValueType type) {
         switch (type.opcode()) {
-            case ValueType.ID.I32:
-            case ValueType.ID.F32:
-            case ValueType.ID.Ref:
-            case ValueType.ID.RefNull:
+            case NewValueType.ID.I32:
+            case NewValueType.ID.F32:
+            case NewValueType.ID.Ref:
+            case NewValueType.ID.RefNull:
                 return 1;
-            case ValueType.ID.I64:
-            case ValueType.ID.F64:
+            case NewValueType.ID.I64:
+            case NewValueType.ID.F64:
                 return 2;
             default:
                 throw new IllegalArgumentException("Unsupported type: " + type);
         }
     }
 
-    public static void emitPop(MethodVisitor asm, ValueType type) {
+    public static void emitPop(MethodVisitor asm, NewValueType type) {
         asm.visitInsn(slotCount(type) == 1 ? Opcodes.POP : Opcodes.POP2);
     }
 
@@ -243,7 +243,7 @@ final class AotUtil {
                 false);
     }
 
-    public static String valueMethodName(List<ValueType> types) {
+    public static String valueMethodName(List<NewValueType> types) {
         return "value_"
                 + types.stream()
                         .map(type -> type.name().toLowerCase(Locale.ROOT))
